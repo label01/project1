@@ -118,17 +118,17 @@ int main(void) {//主程序
 			TM1640_display(5,20);
 			TM1640_display(6,20);
 			TM1640_display(7,20);
-			MENU2=0;
 			if(MENU2 == 0){
+				//set
 				TM1640_display(0,24);
 				TM1640_display(1,25);
 				TM1640_display(2,26); 
 				TM1640_display(3,27);
-			}
-			if (MENU2 == 1){
+			}else{
+				//al0~al9
 				TM1640_display(0,28);
 				TM1640_display(1,29);
-				TM1640_display(2,1); 
+				TM1640_display(2,MENU2-1); 
 				TM1640_display(3,20);
 			}
 			if(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_A)) {
@@ -138,13 +138,15 @@ int main(void) {//主程序
 				while(!GPIO_ReadInputDataBit(TOUCH_KEYPORT,TOUCH_KEY_A));
 			}
 			if(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_B)) {
-				//二级菜单AL
-				MENU2=1;
+				//二级菜单AL0~AL9 一共设置10个闹钟
+				MENU2++;
+				if (MENU2>10) MENU2=0;
 				BUZZER_BEEP1();//按键提示音
 				while(!GPIO_ReadInputDataBit(TOUCH_KEYPORT,TOUCH_KEY_B));
 			}
 			if(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_C)) {
 				KEY_VALUE=0;//取消返回日期显示
+				MENU2=0; //二级菜单复位
 				BUZZER_BEEP1();//按键提示音
 				while(!GPIO_ReadInputDataBit(TOUCH_KEYPORT,TOUCH_KEY_C));
 				
@@ -153,10 +155,10 @@ int main(void) {//主程序
 				//确认跳转菜单
 				if(MENU2 == 0){
 					KEY_VALUE=4;
+				}else{
+					KEY_VALUE=9+MENU2;
 				}
-				if(MENU2 == 1){
-					KEY_VALUE=9;
-				}
+				MENU2=0; //二级菜单复位
 				BUZZER_BEEP1();//按键提示音
 				while(!GPIO_ReadInputDataBit(TOUCH_KEYPORT,TOUCH_KEY_D));
 			}
@@ -653,7 +655,9 @@ int main(void) {//主程序
 			}
 		}
 		
-		
+		if (9<MENU  && MENU<20){
+			
+		}
 		
 		
 		

@@ -19,3 +19,19 @@ u16 FLASH_R(u32 addr){
 
 }
 
+
+
+void ALFLASH_W(u8 a, u8 d1, u8 d2){
+	u16 t;
+	t=d1*0x100+d2;
+	FLASH_W(FLASH_START_ADDR+a, t);
+}
+
+
+
+
+
+
+
+
+

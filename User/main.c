@@ -19,6 +19,8 @@
 #include "i2c.h"
 #include "buzzer.h"
 
+#include "flash.h"
+
 #define KEY_SPEED1	100		//长按计时
 #define KEY_SPEED2 100		//数值刷新间隔ms
 
@@ -33,6 +35,7 @@ int main(void) {//主程序
 	u8 j=0; //变量j
 	u8 a=0; //长按计数
 	u16 b=0; //循环显示日期 时间 温度
+	u16 c=0;//暂存闹钟值
 	u8 tup=0;//更新时间标志位
 	u8 altime[20]={0};//保存是个闹钟的时 分
 	RCC_Configuration();//系统时钟初始化
@@ -46,6 +49,12 @@ int main(void) {//主程序
 	BUZZER_Init();
 	delay_ms(1000);
 	BUZZER_BEEP2();//开机提示音
+	
+//	for(i=0; i<10; i++){
+//		c=FLASH_R(FLASH_START_ADDR+i);
+//		altime[2*i]=c/0x100;
+//		altime[2*i+1]=c%0x100;
+//	}
 	
 	while (1) {
 		MENU = KEY_VALUE;
@@ -134,15 +143,16 @@ int main(void) {//主程序
 				TM1640_display(3,20);
 			}
 			if(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_A)) {
-				//二级菜单SET
-				MENU2=0;
+				//二级菜单正向浏览
+				MENU2++;
+				if (MENU2>10) MENU2=0;
 				BUZZER_BEEP1();//按键提示音
 				while(!GPIO_ReadInputDataBit(TOUCH_KEYPORT,TOUCH_KEY_A));
 			}
 			if(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_B)) {
-				//二级菜单AL0~AL9 一共设置10个闹钟
-				MENU2++;
-				if (MENU2>10) MENU2=0;
+				//二级菜单AL0~AL9 一共设置10个闹钟 二级菜单负向浏览
+				if (MENU2==0) MENU2=11;
+				MENU2--;
 				BUZZER_BEEP1();//按键提示音
 				while(!GPIO_ReadInputDataBit(TOUCH_KEYPORT,TOUCH_KEY_B));
 			}
@@ -658,7 +668,10 @@ int main(void) {//主程序
 			}
 		}
 		
-		if (9<MENU  && MENU<20){
+		
+		
+		
+		if(9<MENU && MENU<20){
 			// AL0~AL9 10~19
 			//配置闪烁效果
 			i++;
@@ -676,8 +689,6 @@ int main(void) {//主程序
 				TM1640_display(6,altime[j+1]/10);
 				TM1640_display(7,altime[j+1]%10);	//分
 			}
-			
-			
 			//分钟闪烁
 			if(j == 2*(MENU-10)+1){
 				if(i < 700){
@@ -693,8 +704,7 @@ int main(void) {//主程序
 				TM1640_display(5,23);
 			}
 			
-			
-			if(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_A)) { 
+			if(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_A)){ 
 				i=0;//保证调整时间时，数码管不再闪烁，干扰调时
 				//判断是否长按
 				while(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_A) && a < KEY_SPEED1){
@@ -707,8 +717,12 @@ int main(void) {//主程序
 						altime[j]++;
 						if(j==2*(MENU-10)){
 							if (altime[j]>23) altime[j]=0;
+							TM1640_display(3,altime[j]/10);//时	
+							TM1640_display(4,altime[j]%10);
 						}else{
 							if(altime[j]>59) altime[j]=0;
+							TM1640_display(6,altime[j]/10);
+							TM1640_display(7,altime[j]%10);	//分
 						}
 						delay_ms(KEY_SPEED2);//刷新数值周期
 						BUZZER_BEEP1();//按键提示音
@@ -723,7 +737,8 @@ int main(void) {//主程序
 					BUZZER_BEEP1();//按键提示音
 				}
 			}
-			if(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_B)) {
+			
+			if(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_B)){
 				i=0;//保证调整时间时，数码管不再闪烁，干扰调时
 				//判断是否长按
 				while(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_B) && a < KEY_SPEED1){
@@ -736,9 +751,13 @@ int main(void) {//主程序
 						if(j==2*(MENU-10)){
 							if (altime[j]==0) altime[j]=24;
 							altime[j]--;
+							TM1640_display(3,altime[j]/10);//时	
+							TM1640_display(4,altime[j]%10);
 						}else{
-							if(altime[j]==0) altime[j]=24;
+							if(altime[j]==0) altime[j]=60;
 							altime[j]--;
+							TM1640_display(6,altime[j]/10);//分
+							TM1640_display(7,altime[j]%10);	
 						}
 						delay_ms(KEY_SPEED2);//刷新数值周期
 						BUZZER_BEEP1();//按键提示音
@@ -754,8 +773,9 @@ int main(void) {//主程序
 					BUZZER_BEEP1();//按键提示音
 				}
 			}
+			
 			//调整定时下一位
-			if(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_C)) {
+			if(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_C)){
 				if(j==2*(MENU-10)){
 					j=2*(MENU-10)+1;
 				}else{
@@ -764,8 +784,9 @@ int main(void) {//主程序
 				BUZZER_BEEP1();//按键提示音
 				while(!GPIO_ReadInputDataBit(TOUCH_KEYPORT,TOUCH_KEY_C));
 			}
+			
 			//确认定时
-			if(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_D)) {
+			if(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_D)){
 				i=0;//保证调整时间时，数码管不再闪烁，干扰调时
 				j=0;//复位
 				KEY_VALUE=1;

@@ -50,11 +50,22 @@ int main(void) {//主程序
 	delay_ms(1000);
 	BUZZER_BEEP2();//开机提示音
 	
-//	for(i=0; i<10; i++){
-//		c=FLASH_R(FLASH_START_ADDR+i);
-//		altime[2*i]=c/0x100;
-//		altime[2*i+1]=c%0x100;
-//	}
+	//读FLASH数据
+	for(i=0; i<10; i++){//读出十组闹钟分钟数值
+		c=FLASH_R(FLASH_START_ADDR+i*2);//从指定页的地址读FLASH
+		altime[2*i]=c/0x100;
+		altime[2*i+1]=c%0x100;
+	}
+	
+	//判断，如果闹钟0的小时值大于24就初始化闹钟的所有数据
+	if(altime[0]>23){
+		//初始化所有值
+		for(i=0;i<20;i++){
+			altime[i]=0;
+		}
+	}
+	//写入一遍闹钟的所有数据到FLASH里
+	ALFLASH_W(altime);
 	
 	while (1) {
 		MENU = KEY_VALUE;
@@ -781,6 +792,7 @@ int main(void) {//主程序
 				}else{
 					j=2*(MENU-10);
 				}
+				ALFLASH_W(altime);//写入flash中
 				BUZZER_BEEP1();//按键提示音
 				while(!GPIO_ReadInputDataBit(TOUCH_KEYPORT,TOUCH_KEY_C));
 			}
@@ -790,6 +802,7 @@ int main(void) {//主程序
 				i=0;//保证调整时间时，数码管不再闪烁，干扰调时
 				j=0;//复位
 				KEY_VALUE=1;
+				ALFLASH_W(altime);//写入flash中
 				BUZZER_BEEP4();//退出调时提示音
 				while(!GPIO_ReadInputDataBit(TOUCH_KEYPORT,TOUCH_KEY_D));
 			}

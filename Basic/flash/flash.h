@@ -12,7 +12,7 @@
 void FLASH_W(u32 addr, u16 data);
 u16 FLASH_R(u32 addr);
 
-void ALFLASH_W(u8 a, u8 d1, u8 d2);
+void ALFLASH_W(u8 *d);
 
 #endif
 

@@ -37,3 +37,4 @@
 .\objects\main.o: .\Hardware\LM75A\lm75a.h
 .\objects\main.o: .\Basic\i2c\i2c.h
 .\objects\main.o: .\Hardware\BUZZER\buzzer.h
+.\objects\main.o: .\Basic\flash\flash.h

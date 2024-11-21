@@ -3,9 +3,9 @@
 <title>Static Call Graph - [.\Objects\project1.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image .\Objects\project1.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060750: Last Updated: Tue Nov 19 20:48:13 2024
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 5060750: Last Updated: Thu Nov 21 13:58:16 2024
 <BR><P>
-<H3>Maximum Stack Usage =        148 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
+<H3>Maximum Stack Usage =        164 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
 __rt_entry_main &rArr; main &rArr; I2C_Configuration &rArr; I2C_Init &rArr; RCC_GetClocksFreq
 <P>
@@ -209,7 +209,7 @@ Global Symbols
 <P><STRONG><a name="[d1]"></a>__rt_entry_postsh_1</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, __rtentry2.o(.ARM.Collect$$rtentry$$00000009))
 
 <P><STRONG><a name="[47]"></a>__rt_entry_main</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, __rtentry2.o(.ARM.Collect$$rtentry$$0000000D))
-<BR><BR>[Stack]<UL><LI>Max Depth = 148 + Unknown Stack Size
+<BR><BR>[Stack]<UL><LI>Max Depth = 164 + Unknown Stack Size
 <LI>Call Chain = __rt_entry_main &rArr; main &rArr; I2C_Configuration &rArr; I2C_Init &rArr; RCC_GetClocksFreq
 </UL>
 <BR>[Calls]<UL><LI><a href="#[49]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;exit
@@ -1136,8 +1136,8 @@ Global Symbols
 <P><STRONG><a name="[3a]"></a>fputc</STRONG> (Thumb, 24 bytes, Stack size 0 bytes, usart.o(i.fputc))
 <BR>[Address Reference Count : 1]<UL><LI> _printf_char_file.o(.text)
 </UL>
-<P><STRONG><a name="[48]"></a>main</STRONG> (Thumb, 6462 bytes, Stack size 64 bytes, main.o(i.main))
-<BR><BR>[Stack]<UL><LI>Max Depth = 148<LI>Call Chain = main &rArr; I2C_Configuration &rArr; I2C_Init &rArr; RCC_GetClocksFreq
+<P><STRONG><a name="[48]"></a>main</STRONG> (Thumb, 7140 bytes, Stack size 80 bytes, main.o(i.main))
+<BR><BR>[Stack]<UL><LI>Max Depth = 164<LI>Call Chain = main &rArr; I2C_Configuration &rArr; I2C_Init &rArr; RCC_GetClocksFreq
 </UL>
 <BR>[Calls]<UL><LI><a href="#[7d]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;LM75A_GetTemp
 <LI><a href="#[a8]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;TM1640_display

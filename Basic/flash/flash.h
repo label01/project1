@@ -12,7 +12,11 @@
 void FLASH_W(u32 addr, u16 data);
 u16 FLASH_R(u32 addr);
 
+//写入闹钟的FLASH数据
 void ALFLASH_W(u8 *d);
+
+//写入温度的FLASH数据
+void TMFLASH_W(u8 *d);
 
 #endif
 

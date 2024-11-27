@@ -46,7 +46,23 @@ void ALFLASH_W(u8 *d){
 	
 }
 
-
+//写入温度的FLASH数据
+void TMFLASH_W(u8 *d){
+	u8 i=0;
+	u16 t=0;
+	
+	FLASH_Unlock();
+	FLASH_ClearFlag(FLASH_FLAG_BSY|FLASH_FLAG_EOP|FLASH_FLAG_PGERR|FLASH_FLAG_WRPRTERR);//Clears all flags
+	FLASH_ErasePage(FLASH_START_ADDR);//擦除指定地址页
+	for(i=0;i<2;i++){
+		t=d[2*i]*0x100+d[2*i+1];
+		FLASH_ProgramHalfWord(FLASH_START_ADDR+2*(i+10), t);//在指定的FLASH选择字节地址编写半个字  因为写入的数据是 u16， 如果是u32则调用FLASH_ProgramWord
+		FLASH_ClearFlag(FLASH_FLAG_BSY|FLASH_FLAG_EOP|FLASH_FLAG_PGERR|FLASH_FLAG_WRPRTERR);//Clears all flags
+	}
+	
+	FLASH_Lock();//锁定FLASH
+	
+}
 
 
 

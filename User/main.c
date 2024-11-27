@@ -40,6 +40,7 @@ int main(void) {//主程序
 	u8 e=0; //闹钟到时闹钟号
 	u8 tup=0;//更新时间标志位
 	u8 altime[20]={0};//保存是个闹钟的时 分
+	u8 temp[4]={0}; //保存温度的整数和小数
 	RCC_Configuration();//系统时钟初始化
 	LED_Init();//LED初始化
 	TOUCH_KEY_Init();//触摸按键初始化
@@ -53,10 +54,15 @@ int main(void) {//主程序
 	BUZZER_BEEP2();//开机提示音
 	
 	//读FLASH数据
-	for(i=0; i<10; i++){//读出十组闹钟分钟数值
+	for(i=0; i<12; i++){//读出十组闹钟分钟数值+2组温度值
 		c=FLASH_R(FLASH_START_ADDR+i*2);//从指定页的地址读FLASH
-		altime[2*i]=c/0x100;
-		altime[2*i+1]=c%0x100;
+		if(i<10){
+			altime[2*i]=c/0x100;
+			altime[2*i+1]=c%0x100;
+		}else{//温度值赋值
+			temp[(i-10)*2]=c/0x100;
+			temp[(i-10)*2+1]=c%0x100;
+		}
 	}
 	
 	//判断，如果闹钟0的小时值大于24就初始化闹钟的所有数据
@@ -67,9 +73,21 @@ int main(void) {//主程序
 			altime[2*i+1]=0;
 		}
 	}
+	
+	//判断，如果温度0的小时值大于55就初始化温度的所有数据
+	if(temp[0]>55){
+		//初始化所有值
+		for(i=0;i<2;i++){
+			temp[2*i]=0;
+			temp[2*i+1]=0;
+		}
+	}
+	
 	//写入一遍闹钟的所有数据到FLASH里
 	ALFLASH_W(altime);
 	
+	//写入一遍设置的温度值
+	TMFLASH_W(temp);
 	
 	while (1) {
 		//菜单每次循环都重新获得一遍键值
@@ -172,23 +190,31 @@ int main(void) {//主程序
 				TM1640_display(1,25);
 				TM1640_display(2,26); 
 				TM1640_display(3,27);
-			}else{
+			}
+			if(0<MENU2 && MENU2<11){
 				//al0~al9
 				TM1640_display(0,28);
 				TM1640_display(1,29);
 				TM1640_display(2,MENU2-1); 
 				TM1640_display(3,20);
 			}
+			if(MENU2>10){
+				//tc0~tc1
+				TM1640_display(0,32);
+				TM1640_display(1,22);
+				TM1640_display(2,MENU2-11); 
+				TM1640_display(3,20);
+			}
 			if(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_A)) {
 				//二级菜单正向浏览
 				MENU2++;
-				if (MENU2>10) MENU2=0;
+				if (MENU2>12) MENU2=0;
 				BUZZER_BEEP1();//按键提示音
 				while(!GPIO_ReadInputDataBit(TOUCH_KEYPORT,TOUCH_KEY_A));
 			}
 			if(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_B)) {
-				//二级菜单AL0~AL9 一共设置10个闹钟 二级菜单负向浏览
-				if (MENU2==0) MENU2=11;
+				//二级菜单AL0~AL9 一共设置10个闹钟 + 2个温度值 二级菜单负向浏览
+				if (MENU2==0) MENU2=13;
 				MENU2--;
 				BUZZER_BEEP1();//按键提示音
 				while(!GPIO_ReadInputDataBit(TOUCH_KEYPORT,TOUCH_KEY_B));
@@ -204,9 +230,14 @@ int main(void) {//主程序
 				//确认跳转菜单
 				if(MENU2 == 0){
 					KEY_VALUE=4;
-				}else{
+				}
+				if(MENU2>0 && MENU2<11){
 					KEY_VALUE=9+MENU2;
-					j=2*(KEY_VALUE-10);
+					j=2*(KEY_VALUE-10);//j是闹钟数组编号
+				}
+				else{
+					KEY_VALUE=10+MENU2;
+					j=2*(KEY_VALUE-21);//j是温度值数组编号
 				}
 				MENU2=0; //二级菜单复位
 				BUZZER_BEEP3();//按键提示音
@@ -842,7 +873,7 @@ int main(void) {//主程序
 			}
 		}
 		
-		
+		//闹钟到时处理
 		if (MENU == 20){
 			//配置闪烁效果
 			i++;
@@ -893,6 +924,125 @@ int main(void) {//主程序
 				d=0;//闹钟到时标志位复位
 				k=0;//闹钟到时响铃时间计数归零
 				BUZZER_BEEP1();//按键提示音
+				while(!GPIO_ReadInputDataBit(TOUCH_KEYPORT,TOUCH_KEY_D));
+			}
+		}
+		
+		
+		//调整保存的两组温度值
+		if (MENU==21 || MENU==22){
+			i++;//闪烁计数
+			TM1640_display(0,32);//t
+			TM1640_display(1,22);//c
+			TM1640_display(2,MENU-21); //触发的温度值编号
+			TM1640_display(3,20);
+			TM1640_display(7,22);
+			//配置闪烁效果
+			if(j==2*(MENU-21)){//调整整数位
+				if(i < 700){
+					TM1640_display(4,temp[j]%100/10);//整数位
+					TM1640_display(5,temp[j]%10+10);//整数位
+				}else{
+					TM1640_display(4,20);//数码管灭
+					TM1640_display(5,20);
+				}
+				if (i > 1400) i = 0;
+				TM1640_display(6,temp[j+1]%10);//小数位常亮
+			}
+			if(j==2*(MENU-21)+1){//调整小数位
+				if(i < 700){
+					TM1640_display(6,temp[j]%10);
+				}else{
+					TM1640_display(6,20);//数码管灭
+				}
+				if (i > 1400) i = 0;
+				TM1640_display(4,temp[j-1]%100/10);//整数位常亮
+				TM1640_display(5,temp[j-1]%10+10);
+			}
+			if(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_A)){
+				i=0;//保证调整时间时，数码管不再闪烁，干扰调时
+				//判断是否长按
+				while(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_A) && a < KEY_SPEED1){
+					a++;
+					delay_ms(10); //长按计时
+				}
+				//长按
+				if(a>=KEY_SPEED1){
+					while(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_A)){
+						temp[j]++;//累加
+						if(j==2*(MENU-21)){//调整整数位
+							if(temp[j]>55) temp[j]=0;
+							TM1640_display(4,temp[j]%100/10);//整数位
+							TM1640_display(5,temp[j]%10+10);//整数位
+						} 
+						if(j==2*(MENU-21)+1){//调整小数位
+							if(temp[j]>9) temp[j]=0;
+							TM1640_display(6,temp[j]%10);//保证调整数值时，小数位常亮
+						}
+						delay_ms(KEY_SPEED2);//刷新数值周期
+						BUZZER_BEEP1();//按键提示音
+					}
+				}else{//单击
+					temp[j]++;//累加
+					if(j==2*(MENU-21)){//调整整数位
+						if(temp[j]>55) temp[j]=0;
+					} 
+					if(j==2*(MENU-21)+1){//调整小数位
+						if(temp[j]>9) temp[j]=0;
+					}
+					BUZZER_BEEP1();//按键提示音
+				}
+			}
+			if(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_B)){
+				i=0;//保证调整时间时，数码管不再闪烁，干扰调时
+				//判断是否长按
+				while(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_B) && a < KEY_SPEED1){
+					a++;
+					delay_ms(10); //长按计时
+				}
+				//长按
+				if(a>=KEY_SPEED1){
+					while(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_B)){
+						if(j==2*(MENU-21)){//调整整数位
+							if(temp[j]==0) temp[j]=56;
+							TM1640_display(4,temp[j]%100/10);//整数位
+							TM1640_display(5,temp[j]%10+10);//整数位
+						} 
+						if(j==2*(MENU-21)+1){//调整小数位
+							if(temp[j]==0) temp[j]=10;
+							TM1640_display(6,temp[j]%10);//保证调整数值时，小数位常亮
+						}
+						temp[j]--;//累减
+						delay_ms(KEY_SPEED2);//刷新数值周期
+						BUZZER_BEEP1();//按键提示音
+					}
+				}else{//单击
+					if(j==2*(MENU-21)){//调整整数位
+						if(temp[j]==0) temp[j]=56;
+					} 
+					if(j==2*(MENU-21)+1){//调整小数位
+						if(temp[j]==0) temp[j]=10;
+					}
+					temp[j]--;//累减
+					BUZZER_BEEP1();//按键提示音
+				}
+			}
+			if(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_C)){//调整下一位
+				if(j==2*(MENU-21)){//判断是否为小时还是分钟，如果是分钟就切换到小时反之亦然
+					j=2*(MENU-21)+1;
+				}else{
+					j=2*(MENU-21);
+				}
+				TMFLASH_W(temp);//写入flash中
+				BUZZER_BEEP1();//按键提示音
+				while(!GPIO_ReadInputDataBit(TOUCH_KEYPORT,TOUCH_KEY_C));
+			}
+			if(!GPIO_ReadInputDataBit(TOUCH_KEYPORT, TOUCH_KEY_D)){
+				i=0;//保证跳转回去，数码管常亮
+				j=0;//复位
+				KEY_VALUE=2;//跳转到温度值
+				TMFLASH_W(temp);//写入flash中
+				BUZZER_BEEP4();//退出调时提示音
 				while(!GPIO_ReadInputDataBit(TOUCH_KEYPORT,TOUCH_KEY_D));
 			}
 		}
